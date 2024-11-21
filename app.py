@@ -19,6 +19,7 @@ def index_to_excel_col(index):
     return col_str
 
 st.header("Sheet view")
+st.sidebar.write('v 1.0.1')
 xlfile1=None
 xlfile2=None
 xlfile1 = st.sidebar.file_uploader("Upload first Excel file", type=['xlsx'], key='file1')
@@ -124,8 +125,6 @@ if xlfile1 and xlfile2:
                 # columns = [UniqueRow] + [col for col in df.columns if col != UniqueRow]
                 # print(UniqueRow,type(UniqueRow))
                 # df= df[columns]
-                # print('cols are5',len(columns))
-                print('df before cols5',df.columns)
 
                     #error handling otherwise if same files are compared these dataframes are never made and object type stays None empty causing 
                     # error 'NoneType' object has no attribute 'to_excel'
