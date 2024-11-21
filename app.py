@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import warnings
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
 warnings.filterwarnings('ignore')
 def add_row_to_dataframe(df, new_row):
@@ -11,10 +13,10 @@ def add_row_to_dataframe(df, new_row):
         # Append the new row to the existing DataFrame
         df = pd.concat([df, new_row], ignore_index=True)
     return df
-def index_to_excel_col(index):
+def index_to_column_name(index):
     col_str = ''
     while index >= 0:
-        col_str = chr(index % 26 + 67) + col_str
+        col_str = chr(index % 26 + 65) + col_str
         index = index // 26 - 1
     return col_str
 
@@ -24,6 +26,7 @@ xlfile1=None
 xlfile2=None
 xlfile1 = st.sidebar.file_uploader("Upload first Excel file", type=['xlsx'], key='file1')
 xlfile2 = st.sidebar.file_uploader("Upload second Excel file", type=['xlsx'], key='file2')
+alldiff=[]
 if xlfile1 and xlfile2:
     xls1 = pd.ExcelFile(xlfile1)
     xls2 = pd.ExcelFile(xlfile2)
@@ -91,6 +94,7 @@ if xlfile1 and xlfile2:
 
                 #the next program creates second sheet for checking values which are different, but having same unique identifier
                 df = None
+                globalmismatched=[]
                 for uid in uid1list:
                     if uid in uid2list:
                         ind1=uid1list.index(uid)
@@ -100,6 +104,7 @@ if xlfile1 and xlfile2:
                         # are_not_equal = not row_df1.equals(row_df2)
                         # if are_not_equal==True:
                         differing_columns = []
+                        column_ids=[]
                         # print(row_df1)
                         for col in row_df1.columns:
                             val1 = row_df1[col].values[0]
@@ -107,21 +112,35 @@ if xlfile1 and xlfile2:
                             if pd.isna(val1) and pd.isna(val2):
                                 continue  # Both are NaN, so they are considered equal
                             if val1 != val2:
-                                excel_col = index_to_excel_col(row_df1.columns.get_loc(col))
-                                differing_columns.append(f"{col}({excel_col})")
+                                differing_columns.append(col)
                         if len(differing_columns)>0:
-                            comments = ', '.join(differing_columns)
+                            row_df1.insert(1, 'Unmatched Column', '')
+                            for mismatch in differing_columns:
+                                column_ids.append(index_to_column_name(row_df1.columns.get_loc(mismatch)+2))
+                            # print(differing_columns,len(differing_columns))
+
                             text = f'''Unique Row({UniqueRow})'''
                             row_df1.insert(0, text, row_df1[UniqueRow])
                             row_df1.insert(1, 'Comments', f"{len(differing_columns)} mismatched")
-                            row_df1.insert(2, 'Unmatched Column', comments)
-                            row_df2['Unmatched Column(column id)'] = comments
+                            combined = [f"{a}({b})" for a, b in zip(column_ids, differing_columns)]
+                            comments = ', '.join(combined)
+                            print(comments)
+                            row_df1["Unmatched Column"]=comments
+                            for mismatch in column_ids:
+                                if df is None:
+                                    globalmismatched.append(f'{mismatch}{2}')
+                                else:
+                                    height = df.shape[0]
+                                    globalmismatched.append(f'{mismatch}{height+2}')
+
+                            # row_df2['Unmatched Column(column id)'] = comments
                             row_df1['-----------------'] = "-----------------"
                             row_df1['------------------'] = "------------------"
                             row_df1 = row_df1.reset_index(drop=True)
                             row_df2 = row_df2.reset_index(drop=True)
                             rowdf = pd.concat([row_df1, row_df2], axis=1)
                             df = add_row_to_dataframe(df, rowdf)
+                            
                 # columns = [UniqueRow] + [col for col in df.columns if col != UniqueRow]
                 # print(UniqueRow,type(UniqueRow))
                 # df= df[columns]
@@ -150,15 +169,31 @@ if xlfile1 and xlfile2:
                 else:
                     status="There are no missing and mismatched columns, both sheets are exactly same."
                     
+                ##########################################
+                print('alldiff',alldiff)
+                wb = load_workbook('combined.xlsx')
+                ws = wb['MisMatched']
+                yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+
+                # Apply the yellow fill to all cells in alldiff
+                print(globalmismatched)
+                for cell in globalmismatched:
+                    ws[cell].fill = yellow_fill
                 
+                wb.save('combined2.xlsx')
+                
+
                 # Download button for the combined Excel file
-                with open('combined.xlsx', 'rb') as f:
+                with open('combined2.xlsx', 'rb') as f:
                     st.sidebar.download_button(
                         label="Download Excel file",
                         data=f,
                         file_name='combined.xlsx',
                         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     )
-                st.sidebar.write(status)
+
+                # Optional: Write a status message
+                st.sidebar.write("The file has been updated and is ready for download.")
+
                 
 
