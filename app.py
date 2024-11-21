@@ -46,8 +46,12 @@ if xlfile1 and xlfile2:
             st.write(df1)
             st.write(df2)
             if UniqueRow:
-                df1=df1[[UniqueRow]+[c for c in df1 if c !=UniqueRow]]
-                df2=df2[[UniqueRow]+[c for c in df2 if c !=UniqueRow]]
+                # columns = [UniqueRow] + [col for col in df1.columns if col != UniqueRow]
+                # df1 = df1[columns]
+                # df2=df2[columns]
+                # df1=df1[[UniqueRow]+[c for c in df1 if c !=UniqueRow]]
+                # df2=df2[[UniqueRow]+[c for c in df2 if c !=UniqueRow]]
+
 
                 #line below is error handling in case one file is empty, doesnt has unique row, or wrong header is selected
                 if UniqueRow not in df1.columns or UniqueRow not in df2.columns:
@@ -78,8 +82,10 @@ if xlfile1 and xlfile2:
                     row_df2 = df2.iloc[[ind2]].copy()
                     row_df2['source'] = xlfile2.name
                     onlyonefiledataframe = add_row_to_dataframe(onlyonefiledataframe, row_df2)
+                #----------------------------------
                 if onlyonefiledataframe is not None:
-                    onlyonefiledataframe=onlyonefiledataframe[[UniqueRow,'source']+[c for c in df2 if c !=[UniqueRow,'source']]]
+                    text = f'''Unique Row({UniqueRow})'''
+                    onlyonefiledataframe.insert(0, text, onlyonefiledataframe[UniqueRow])
 
 
                 #the next program creates second sheet for checking values which are different, but having same unique identifier
@@ -104,6 +110,8 @@ if xlfile1 and xlfile2:
                                 differing_columns.append(f"{col}({excel_col})")
                         if len(differing_columns)>0:
                             comments = ', '.join(differing_columns)
+                            text = f'''Unique Row({UniqueRow})'''
+                            row_df1.insert(0, text, row_df1[UniqueRow])
                             row_df1.insert(1, 'Comments', f"{len(differing_columns)} mismatched")
                             row_df1.insert(2, 'Unmatched Column', comments)
                             row_df2['Unmatched Column(column id)'] = comments
@@ -113,7 +121,11 @@ if xlfile1 and xlfile2:
                             row_df2 = row_df2.reset_index(drop=True)
                             rowdf = pd.concat([row_df1, row_df2], axis=1)
                             df = add_row_to_dataframe(df, rowdf)
-                # print(df)
+                # columns = [UniqueRow] + [col for col in df.columns if col != UniqueRow]
+                # print(UniqueRow,type(UniqueRow))
+                # df= df[columns]
+                # print('cols are5',len(columns))
+                print('df before cols5',df.columns)
 
                     #error handling otherwise if same files are compared these dataframes are never made and object type stays None empty causing 
                     # error 'NoneType' object has no attribute 'to_excel'
