@@ -20,13 +20,13 @@ def index_to_column_name(index):
         index = index // 26 - 1
     return col_str
 
-st.header("Sheet view")
-st.sidebar.write('v 1.0.1')
+status=''
+st.header("Sheet view") 
+st.sidebar.write('v 1.0.1 . For Cognizant Levi Team Internal Use only.')
 xlfile1=None
 xlfile2=None
 xlfile1 = st.sidebar.file_uploader("Upload first Excel file", type=['xlsx'], key='file1')
 xlfile2 = st.sidebar.file_uploader("Upload second Excel file", type=['xlsx'], key='file2')
-alldiff=[]
 if xlfile1 and xlfile2:
     xls1 = pd.ExcelFile(xlfile1)
     xls2 = pd.ExcelFile(xlfile2)
@@ -74,8 +74,9 @@ if xlfile1 and xlfile2:
                 for uniques1 in unique_from_list1:
                     ind1=uid1list.index(uniques1)
                     row_df1 = df1.iloc[[ind1]].copy()
-                    row_df1['source'] = xlfile1.name
+                    row_df1['source']=xlfile1.name
                     onlyonefiledataframe = add_row_to_dataframe(onlyonefiledataframe, row_df1)
+                    onlyonefiledataframe['source']=xlfile1.name
                 # empty line
                 if onlyonefiledataframe is not None and not onlyonefiledataframe.empty:
                     onlyonefiledataframe.loc[len(onlyonefiledataframe)] = [None] * len(onlyonefiledataframe.columns)
@@ -84,13 +85,16 @@ if xlfile1 and xlfile2:
                 for uniques2 in unique_from_list2:
                     ind2=uid2list.index(uniques2)
                     row_df2 = df2.iloc[[ind2]].copy()
-                    row_df2['source'] = xlfile2.name
+                    row_df2['source']=xlfile2.name
                     onlyonefiledataframe = add_row_to_dataframe(onlyonefiledataframe, row_df2)
+                
                 #----------------------------------
                 if onlyonefiledataframe is not None:
                     text = f'''Unique Row({UniqueRow})'''
                     onlyonefiledataframe.insert(0, text, onlyonefiledataframe[UniqueRow])
-
+                if onlyonefiledataframe is not None:
+                    col = onlyonefiledataframe.pop('source')
+                    onlyonefiledataframe.insert(0, 'source', col)
 
                 #the next program creates second sheet for checking values which are different, but having same unique identifier
                 df = None
@@ -140,7 +144,7 @@ if xlfile1 and xlfile2:
                             row_df2 = row_df2.reset_index(drop=True)
                             rowdf = pd.concat([row_df1, row_df2], axis=1)
                             df = add_row_to_dataframe(df, rowdf)
-                            
+                          
                 # columns = [UniqueRow] + [col for col in df.columns if col != UniqueRow]
                 # print(UniqueRow,type(UniqueRow))
                 # df= df[columns]
@@ -170,30 +174,31 @@ if xlfile1 and xlfile2:
                     status="There are no missing and mismatched columns, both sheets are exactly same."
                     
                 ##########################################
-                print('alldiff',alldiff)
-                wb = load_workbook('combined.xlsx')
-                ws = wb['MisMatched']
-                yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+                if (status!=''):
+                    st.sidebar.write(status)
+                if len(globalmismatched)!=0:
+                    wb = load_workbook('combined.xlsx')
+                    ws = wb['MisMatched']
+                    yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
 
-                # Apply the yellow fill to all cells in alldiff
-                print(globalmismatched)
-                for cell in globalmismatched:
-                    ws[cell].fill = yellow_fill
+                    # Apply the yellow fill to all cells in alldiff
+                    print(globalmismatched)
+                    for cell in globalmismatched:
+                        ws[cell].fill = yellow_fill
+                    wb.save('combined.xlsx')
                 
-                wb.save('combined2.xlsx')
                 
-
                 # Download button for the combined Excel file
-                with open('combined2.xlsx', 'rb') as f:
-                    st.sidebar.download_button(
-                        label="Download Excel file",
-                        data=f,
-                        file_name='combined.xlsx',
-                        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                    )
+                if df is not None and onlyonefiledataframe is not None:
+                    with open('combined.xlsx', 'rb') as f:
+                        st.sidebar.download_button(
+                            label="Download Excel file",
+                            data=f,
+                            file_name='combined.xlsx',
+                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        )
+st.sidebar.write('For any changes or mantainence reach out to Levi Team(Harsh)')
 
-                # Optional: Write a status message
-                st.sidebar.write("The file has been updated and is ready for download.")
-
+                
                 
 
