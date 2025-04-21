@@ -197,7 +197,7 @@ if xlfile1 and xlfile2:
                             file_name='combined.xlsx',
                             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                         )
-st.sidebar.write('For any changes or mantainence reach out to Levi Team(Harsh)')
+st.sidebar.write('For any changes or mantainence reach out to Levi Team')
 
                 
                 
